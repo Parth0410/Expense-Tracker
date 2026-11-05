@@ -10,7 +10,8 @@ const currencyToggle = document.querySelector("#currencyToggle");
 const dateInput = document.querySelector("#transactionDate");
 const monthFilter = document.querySelector("#monthFilter");
 
-let transactions = loadTransactions();
+let currentUser = null;
+let transactions = [];
 let currency = localStorage.getItem(CURRENCY_KEY) || "INR";
 let selectedMonth = new Date().toISOString().slice(0, 7);
 
@@ -18,16 +19,39 @@ function transactionsForSelectedMonth() {
     return transactions.filter(transaction => transaction.date.slice(0, 7) === selectedMonth);
 }
 
+function accountStorageKey() {
+    if (!currentUser) return null;
+    return `${STORAGE_KEY}:${encodeURIComponent(`${currentUser.name}\n${currentUser.password}`)}`;
+}
+
 function loadTransactions() {
+    const storageKey = accountStorageKey();
+    if (!storageKey) return [];
     try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        return JSON.parse(localStorage.getItem(storageKey)) || [];
     } catch {
         return [];
     }
 }
 
 function saveTransactions() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+    const storageKey = accountStorageKey();
+    if (storageKey) localStorage.setItem(storageKey, JSON.stringify(transactions));
+}
+
+function migrateLegacyTransactions() {
+    const storageKey = accountStorageKey();
+    if (!storageKey || localStorage.getItem(storageKey) !== null) return;
+
+    try {
+        const legacyTransactions = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        if (Array.isArray(legacyTransactions) && legacyTransactions.length) {
+            localStorage.setItem(storageKey, JSON.stringify(legacyTransactions));
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    } catch {
+        localStorage.removeItem(STORAGE_KEY);
+    }
 }
 
 function currencySymbol() {
@@ -246,8 +270,16 @@ signUpForm.addEventListener("submit", event => {
     const mobile = document.querySelector("#registerMobile").value.trim();
     const users = loadUsers();
 
-    if (users.length >= 1) {
-        signUpMessage.textContent = "A user is already registered. Only one account is allowed.";
+    if (users.length >= 1000) {
+        signUpMessage.className = "auth-message";
+        signUpMessage.textContent = "Registration limit reached. Maximum 1000 users are allowed.";
+        return;
+    }
+
+    const duplicateAccount = users.some(account => account.name === name && account.password === password);
+    if (duplicateAccount) {
+        signUpMessage.className = "auth-message";
+        signUpMessage.textContent = "An account with this Name and Password already exists.";
         return;
     }
 
@@ -270,12 +302,30 @@ signInForm.addEventListener("submit", event => {
         return;
     }
 
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ name: user.name, mobile: user.mobile }));
+    currentUser = { name: user.name, password: user.password, mobile: user.mobile };
+    migrateLegacyTransactions();
+    transactions = loadTransactions();
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ name: user.name, password: user.password, mobile: user.mobile }));
     showDashboard();
+    render();
+});
+
+document.querySelector("#clearAllButton").addEventListener("click", () => {
+    if (!transactions.length) return;
+    if (!window.confirm("Clear all transactions for this account?")) return;
+
+    transactions = [];
+    saveTransactions();
+    render();
 });
 
 document.querySelector("#logoutButton").addEventListener("click", () => {
+    saveTransactions();
     localStorage.removeItem(SESSION_KEY);
+    currentUser = null;
+    transactions = [];
+    render();
+    document.querySelector("#welcomeMessage").textContent = "";
     authScreen.classList.remove("hidden");
     appShell.classList.add("hidden");
     signInForm.reset();
@@ -285,12 +335,20 @@ document.querySelector("#logoutButton").addEventListener("click", () => {
 function showDashboard() {
     authScreen.classList.add("hidden");
     appShell.classList.remove("hidden");
+    document.querySelector("#welcomeMessage").textContent = currentUser ? `Welcome, ${currentUser.name}` : "";
+    render();
 }
 
 function initializeAuthentication() {
     try {
         const session = JSON.parse(localStorage.getItem(SESSION_KEY));
-        if (session && loadUsers().some(user => user.name === session.name)) {
+        const user = session && loadUsers().find(account =>
+            account.name === session.name && account.password === session.password
+        );
+        if (user) {
+            currentUser = { name: user.name, password: user.password, mobile: user.mobile };
+            migrateLegacyTransactions();
+            transactions = loadTransactions();
             showDashboard();
             return;
         }

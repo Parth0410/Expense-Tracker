@@ -108,6 +108,7 @@ button { cursor: pointer; }
 h1, h2 { font-family: "Manrope", sans-serif; margin: 0; }
 h1 { font-size: clamp(1.35rem, 3vw, 1.8rem); }
 h2 { font-size: 1.08rem; }
+.welcome-message { margin: 2px 0 0; color: var(--primary); font-size: .82rem; font-weight: 700; }
 .eyebrow { margin: 0 0 3px; color: var(--muted); font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .header-controls { gap: 10px; }
 
@@ -141,6 +142,9 @@ h2 { font-size: 1.08rem; }
 .transaction-form-panel { padding: 20px; margin-bottom: 16px; }
 .section-heading { justify-content: space-between; margin-bottom: 16px; }
 .heading-icon { color: var(--primary); }
+.clear-all-button { height: 36px; border: 1px solid color-mix(in srgb, var(--expense) 30%, transparent); border-radius: 6px; background: var(--expense-bg); color: var(--expense); font-size: .78rem; font-weight: 700; padding: 0 11px; }
+.clear-all-button i { margin-right: 6px; }
+.clear-all-button:hover { border-color: var(--expense); }
 #transactionForm { display: grid; grid-template-columns: 1.5fr .8fr 1fr .9fr auto; align-items: end; gap: 12px; }
 .field { min-width: 0; }
 .field label { display: block; margin-bottom: 7px; color: var(--muted); font-size: .76rem; font-weight: 700; }
