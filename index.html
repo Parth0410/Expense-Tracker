@@ -14,7 +14,39 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <main class="app-shell">
+    <section class="auth-screen" id="authScreen">
+        <div class="auth-brand"><i class="fa-solid fa-wallet" aria-hidden="true"></i><span>Your Personal Monthly Expense Tracker</span></div>
+        <div class="auth-layout">
+            <div class="auth-illustration">
+                <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+                <i class="fa-solid fa-coins" aria-hidden="true"></i>
+                <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
+                <h2>Best way to save<br>your money</h2>
+            </div>
+            <div class="auth-card">
+                <div class="auth-tabs" role="tablist">
+                    <button class="auth-tab active" id="signInTab" type="button" data-auth-view="signin">Sign in</button>
+                    <button class="auth-tab" id="signUpTab" type="button" data-auth-view="signup">Sign up</button>
+                </div>
+                <form id="signInForm" class="auth-form" autocomplete="on">
+                    <div class="auth-field"><i class="fa-solid fa-user" aria-hidden="true"></i><input id="signInName" type="text" placeholder="Name" required></div>
+                    <div class="auth-field"><i class="fa-solid fa-lock" aria-hidden="true"></i><input id="signInPassword" type="password" placeholder="Password" required><i class="fa-solid fa-eye auth-password-toggle" aria-hidden="true"></i></div>
+                    <p class="auth-message" id="signInMessage" role="alert"></p>
+                    <button class="auth-submit" type="submit">Sign in</button>
+                </form>
+                <form id="signUpForm" class="auth-form hidden" autocomplete="on">
+                    <div class="auth-field"><i class="fa-solid fa-user" aria-hidden="true"></i><input id="registerName" type="text" placeholder="Name" maxlength="40" required></div>
+                    <div class="auth-field"><i class="fa-solid fa-lock" aria-hidden="true"></i><input id="registerPassword" type="password" placeholder="Password" minlength="4" required></div>
+                    <div class="auth-field"><i class="fa-solid fa-phone" aria-hidden="true"></i><input id="registerMobile" type="tel" placeholder="Mobile number" pattern="[0-9 +()-]{7,15}" required></div>
+                    <p class="auth-message" id="signUpMessage" role="alert"></p>
+                    <button class="auth-submit" type="submit">Sign up</button>
+                </form>
+                <button class="auth-switch" id="authSwitch" type="button">New user? Sign up</button>
+            </div>
+        </div>
+    </section>
+
+    <main class="app-shell hidden" id="appShell">
         <header class="app-header">
             <div class="brand">
                 <div class="brand-mark"><i class="fa-solid fa-wallet" aria-hidden="true"></i></div>
@@ -37,6 +69,9 @@
                 </button>
                 <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark theme">
                     <i class="fa-solid fa-moon" aria-hidden="true"></i>
+                </button>
+                <button class="theme-toggle" id="logoutButton" type="button" title="Sign out" aria-label="Sign out">
+                    <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
                 </button>
             </div>
         </header>

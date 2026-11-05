@@ -188,3 +188,119 @@ dateInput.valueAsDate = new Date();
 monthFilter.value = selectedMonth;
 applyTheme(savedTheme);
 applyCurrency();
+
+const USERS_KEY = "expenseTrackerUsersJSON";
+const SESSION_KEY = "expenseTrackerSession";
+const authScreen = document.querySelector("#authScreen");
+const appShell = document.querySelector("#appShell");
+const signInForm = document.querySelector("#signInForm");
+const signUpForm = document.querySelector("#signUpForm");
+const signInMessage = document.querySelector("#signInMessage");
+const signUpMessage = document.querySelector("#signUpMessage");
+
+function loadUsers() {
+    try {
+        const users = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+        return Array.isArray(users) ? users : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveUsers(users) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+function setAuthView(view) {
+    const signingIn = view === "signin";
+    signInForm.classList.toggle("hidden", !signingIn);
+    signUpForm.classList.toggle("hidden", signingIn);
+    document.querySelector("#signInTab").classList.toggle("active", signingIn);
+    document.querySelector("#signUpTab").classList.toggle("active", !signingIn);
+    document.querySelector("#authSwitch").textContent = signingIn ? "New user? Sign up" : "Already registered? Sign in";
+    signInMessage.textContent = "";
+    signUpMessage.textContent = "";
+}
+
+document.querySelectorAll("[data-auth-view]").forEach(button => {
+    button.addEventListener("click", () => setAuthView(button.dataset.authView));
+});
+
+document.querySelector("#authSwitch").addEventListener("click", () => {
+    const signingIn = !signInForm.classList.contains("hidden");
+    setAuthView(signingIn ? "signup" : "signin");
+});
+
+signInForm.querySelector(".auth-password-toggle").addEventListener("click", event => {
+    const passwordInput = document.querySelector("#signInPassword");
+    const revealing = passwordInput.type === "password";
+    passwordInput.type = revealing ? "text" : "password";
+    event.currentTarget.classList.toggle("fa-eye", !revealing);
+    event.currentTarget.classList.toggle("fa-eye-slash", revealing);
+});
+
+signUpForm.addEventListener("submit", event => {
+    event.preventDefault();
+    const name = document.querySelector("#registerName").value.trim();
+    const password = document.querySelector("#registerPassword").value;
+    const mobile = document.querySelector("#registerMobile").value.trim();
+    const users = loadUsers();
+
+    if (users.length >= 1) {
+        signUpMessage.textContent = "A user is already registered. Only one account is allowed.";
+        return;
+    }
+
+    users.push({ name, password, mobile });
+    saveUsers(users);
+    signUpMessage.className = "auth-message success";
+    signUpMessage.textContent = "Registration successful. Please sign in.";
+    signUpForm.reset();
+    setTimeout(() => setAuthView("signin"), 900);
+});
+
+signInForm.addEventListener("submit", event => {
+    event.preventDefault();
+    const name = document.querySelector("#signInName").value.trim();
+    const password = document.querySelector("#signInPassword").value;
+    const user = loadUsers().find(account => account.name === name && account.password === password);
+
+    if (!user) {
+        signInMessage.textContent = "Name or password does not match.";
+        return;
+    }
+
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ name: user.name, mobile: user.mobile }));
+    showDashboard();
+});
+
+document.querySelector("#logoutButton").addEventListener("click", () => {
+    localStorage.removeItem(SESSION_KEY);
+    authScreen.classList.remove("hidden");
+    appShell.classList.add("hidden");
+    signInForm.reset();
+    signInMessage.textContent = "";
+});
+
+function showDashboard() {
+    authScreen.classList.add("hidden");
+    appShell.classList.remove("hidden");
+}
+
+function initializeAuthentication() {
+    try {
+        const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+        if (session && loadUsers().some(user => user.name === session.name)) {
+            showDashboard();
+            return;
+        }
+    } catch {
+        localStorage.removeItem(SESSION_KEY);
+    }
+
+    authScreen.classList.remove("hidden");
+    appShell.classList.add("hidden");
+    setAuthView(loadUsers().length ? "signin" : "signup");
+}
+
+initializeAuthentication();
