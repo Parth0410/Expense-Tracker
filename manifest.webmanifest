@@ -1,0 +1,13 @@
+{
+  "name": "Expense Tracker",
+  "short_name": "Expenses",
+  "description": "Track monthly income, expenses, investments, and balance.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef3f8",
+  "theme_color": "#3577e8",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

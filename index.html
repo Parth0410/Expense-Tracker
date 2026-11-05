@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#f4f7fb">
+    <meta name="description" content="Track daily income, expenses, investments, and balance.">
+    <link rel="manifest" href="manifest.webmanifest">
+    <title>Expense Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="app-shell">
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-mark"><i class="fa-solid fa-wallet" aria-hidden="true"></i></div>
+                <div>
+                    <p class="eyebrow">Personal finance</p>
+                    <h1>Expense Tracker</h1>
+                </div>
+            </div>
+
+            <div class="header-controls" aria-label="Display settings">
+                <label class="month-picker" for="monthFilter">
+                    <span>Month</span>
+                    <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+                    <input id="monthFilter" type="month" aria-label="Select transaction month">
+                </label>
+                <button class="currency-toggle" id="currencyToggle" type="button" aria-label="Switch currency">
+                    <span class="currency-option">₹</span>
+                    <span class="currency-track"><span class="currency-thumb"></span></span>
+                    <span class="currency-option">$</span>
+                </button>
+                <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark theme">
+                    <i class="fa-solid fa-moon" aria-hidden="true"></i>
+                </button>
+            </div>
+        </header>
+
+        <section class="summary-grid" aria-label="Financial summary">
+            <article class="summary-card income-card">
+                <div class="summary-icon"><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i></div>
+                <div><p>Income</p><strong id="incomeTotal">₹0.00</strong></div>
+            </article>
+            <article class="summary-card expense-card">
+                <div class="summary-icon"><i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i></div>
+                <div><p>Expense</p><strong id="expenseTotal">₹0.00</strong></div>
+            </article>
+            <article class="summary-card investment-card">
+                <div class="summary-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></div>
+                <div><p>Investments</p><strong id="investmentTotal">₹0.00</strong></div>
+            </article>
+            <article class="summary-card balance-card">
+                <div class="summary-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></div>
+                <div><p>Total Balance</p><strong id="balanceTotal">₹0.00</strong></div>
+            </article>
+        </section>
+
+        <section class="panel transaction-form-panel">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">New entry</p>
+                    <h2>Add transaction</h2>
+                </div>
+                <i class="fa-solid fa-pen-to-square heading-icon" aria-hidden="true"></i>
+            </div>
+            <form id="transactionForm" autocomplete="off">
+                <div class="field description-field">
+                    <label for="description">Description</label>
+                    <input id="description" name="description" type="text" placeholder="e.g. Grocery shopping" maxlength="60" required>
+                </div>
+                <div class="field">
+                    <label for="amount">Amount</label>
+                    <div class="amount-input"><span id="amountCurrency">₹</span><input id="amount" name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required></div>
+                </div>
+                <div class="field">
+                    <label for="transactionDate">Transaction date</label>
+                    <input id="transactionDate" name="transactionDate" type="date" required>
+                </div>
+                <div class="field">
+                    <label for="transactionType">Transaction type</label>
+                    <select id="transactionType" name="transactionType" required>
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                        <option value="investment">Investment</option>
+                    </select>
+                </div>
+                <button class="add-button" type="submit"><i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add transaction</span></button>
+            </form>
+        </section>
+
+        <section class="panel transactions-panel">
+            <div class="section-heading transactions-heading">
+                <div>
+                    <p class="eyebrow">Activity</p>
+                    <h2>Recent transactions</h2>
+                </div>
+                <span class="transaction-count" id="transactionCount">0 entries</span>
+            </div>
+            <div id="transactionList" class="transaction-list" aria-live="polite"></div>
+        </section>
+
+        <footer>Copyright <span>&copy;</span> Expense Tracker 2026</footer>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

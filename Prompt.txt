@@ -1,0 +1,11 @@
+Create an HTML, css and JavaScript application called expense-tracker. The application must have 3 different files - .html, .css and .js. The application is for managing the daily expense and income transactions and show the dashboard. Below are the requirements of the application. Use the current folder for creating files.
+1. On the top of the application we must have 3 cards - Income, Expense and Total Balance.
+2. After that there must be a form to take input from user with different fields - Description, Amount, TransactionDate, TransactionType. TransactionType must be a drop down list.
+3. After the form there must be a list of transactions.
+4. Each item in a list shows transaction details with different background color. Use light green for income and light red for expense.
+5. Each transaction item uses negative and positive signs with other details. Use calendar icon for showing date of transaction.
+6. The look and feel of the application must be modern and elegant. The application must be responsive to adjust in different screen sizes. The layout must be in center screen.
+7. Add a theme switch button on the top to change the theme of the application to light or dark.
+8. Also add a switch to switch the currency symbol to Indian rupee or dollar.
+9. Use fontawesome library for icons.
+10. Add a footer at the bottom to have copyright information. Add copyright to Expense Tracker 2026.

@@ -1,0 +1,190 @@
+const STORAGE_KEY = "expenseTrackerTransactions";
+const THEME_KEY = "expenseTrackerTheme";
+const CURRENCY_KEY = "expenseTrackerCurrency";
+
+const form = document.querySelector("#transactionForm");
+const transactionList = document.querySelector("#transactionList");
+const transactionCount = document.querySelector("#transactionCount");
+const themeToggle = document.querySelector("#themeToggle");
+const currencyToggle = document.querySelector("#currencyToggle");
+const dateInput = document.querySelector("#transactionDate");
+const monthFilter = document.querySelector("#monthFilter");
+
+let transactions = loadTransactions();
+let currency = localStorage.getItem(CURRENCY_KEY) || "INR";
+let selectedMonth = new Date().toISOString().slice(0, 7);
+
+function transactionsForSelectedMonth() {
+    return transactions.filter(transaction => transaction.date.slice(0, 7) === selectedMonth);
+}
+
+function loadTransactions() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch {
+        return [];
+    }
+}
+
+function saveTransactions() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+}
+
+function currencySymbol() {
+    return currency === "INR" ? "₹" : "$";
+}
+
+function formatMoney(amount) {
+    return `${currencySymbol()}${Number(amount).toLocaleString(currency === "INR" ? "en-IN" : "en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    })}`;
+}
+
+function formatDate(dateString) {
+    return new Date(`${dateString}T00:00:00`).toLocaleDateString("en-US", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+    });
+}
+
+function updateDashboard() {
+    const monthlyTransactions = transactionsForSelectedMonth();
+    const income = monthlyTransactions
+        .filter(transaction => transaction.type === "income")
+        .reduce((total, transaction) => total + transaction.amount, 0);
+    const expense = monthlyTransactions
+        .filter(transaction => transaction.type === "expense")
+        .reduce((total, transaction) => total + transaction.amount, 0);
+    const investments = monthlyTransactions
+        .filter(transaction => transaction.type === "investment")
+        .reduce((total, transaction) => total + transaction.amount, 0);
+
+    document.querySelector("#incomeTotal").textContent = formatMoney(income);
+    document.querySelector("#expenseTotal").textContent = formatMoney(expense);
+    document.querySelector("#investmentTotal").textContent = formatMoney(investments);
+    document.querySelector("#balanceTotal").textContent = formatMoney(income - expense - investments);
+    document.querySelector("#amountCurrency").textContent = currencySymbol();
+    transactionCount.textContent = `${monthlyTransactions.length} ${monthlyTransactions.length === 1 ? "entry" : "entries"}`;
+}
+
+function renderTransactions() {
+    const monthlyTransactions = transactionsForSelectedMonth();
+    if (!monthlyTransactions.length) {
+        transactionList.innerHTML = `
+            <div class="empty-state">
+                <i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i>
+                No transactions for the selected month.
+            </div>`;
+        return;
+    }
+
+    transactionList.innerHTML = [...monthlyTransactions]
+        .sort((first, second) => second.date.localeCompare(first.date) || second.id - first.id)
+        .map(transaction => {
+            const isIncome = transaction.type === "income";
+            const isInvestment = transaction.type === "investment";
+            const sign = isIncome ? "+" : "−";
+            const icon = isIncome ? "fa-arrow-down" : isInvestment ? "fa-chart-line" : "fa-arrow-up";
+            return `
+                <article class="transaction-item ${transaction.type}">
+                    <div class="type-icon"><i class="fa-solid ${icon}" aria-hidden="true"></i></div>
+                    <div class="transaction-info">
+                        <strong>${escapeHtml(transaction.description)}</strong>
+                        <span class="transaction-date"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i>${formatDate(transaction.date)}</span>
+                    </div>
+                    <strong class="transaction-value">${sign}${formatMoney(transaction.amount)}</strong>
+                    <button class="delete-button" type="button" data-id="${transaction.id}" aria-label="Delete ${escapeHtml(transaction.description)}">
+                        <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+                    </button>
+                </article>`;
+        }).join("");
+}
+
+function escapeHtml(value) {
+    const element = document.createElement("div");
+    element.textContent = value;
+    return element.innerHTML;
+}
+
+function render() {
+    updateDashboard();
+    renderTransactions();
+}
+
+form.addEventListener("submit", event => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const amount = Number(data.get("amount"));
+    const description = data.get("description").trim();
+
+    if (!description || !Number.isFinite(amount) || amount <= 0) return;
+
+    transactions.push({
+        id: Date.now(),
+        description,
+        amount,
+        date: data.get("transactionDate"),
+        type: data.get("transactionType")
+    });
+
+    saveTransactions();
+    selectedMonth = data.get("transactionDate").slice(0, 7);
+    monthFilter.value = selectedMonth;
+    form.reset();
+    dateInput.valueAsDate = new Date();
+    render();
+});
+
+transactionList.addEventListener("click", event => {
+    const button = event.target.closest(".delete-button");
+    if (!button) return;
+    transactions = transactions.filter(transaction => transaction.id !== Number(button.dataset.id));
+    saveTransactions();
+    render();
+});
+
+function applyTheme(theme) {
+    document.body.classList.toggle("dark", theme === "dark");
+    const isDark = theme === "dark";
+    themeToggle.innerHTML = `<i class="fa-solid ${isDark ? "fa-sun" : "fa-moon"}" aria-hidden="true"></i>`;
+    themeToggle.setAttribute("aria-label", isDark ? "Switch to light theme" : "Switch to dark theme");
+    document.querySelector('meta[name="theme-color"]').content = isDark ? "#11151d" : "#eef3f8";
+}
+
+themeToggle.addEventListener("click", () => {
+    const theme = document.body.classList.contains("dark") ? "light" : "dark";
+    localStorage.setItem(THEME_KEY, theme);
+    applyTheme(theme);
+});
+
+function applyCurrency() {
+    currencyToggle.classList.toggle("dollar", currency === "USD");
+    currencyToggle.setAttribute("aria-label", `Switch currency; currently ${currency}`);
+    render();
+}
+
+currencyToggle.addEventListener("click", () => {
+    currency = currency === "INR" ? "USD" : "INR";
+    localStorage.setItem(CURRENCY_KEY, currency);
+    applyCurrency();
+});
+
+monthFilter.addEventListener("change", () => {
+    if (!monthFilter.value) return;
+    selectedMonth = monthFilter.value;
+    render();
+});
+
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+    });
+}
+
+const savedTheme = localStorage.getItem(THEME_KEY) || "light";
+dateInput.valueAsDate = new Date();
+monthFilter.value = selectedMonth;
+applyTheme(savedTheme);
+applyCurrency();
