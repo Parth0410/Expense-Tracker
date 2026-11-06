@@ -1,0 +1,26 @@
+To create virtual environment
+python -m venv myvenv
+
+To activate the virtual environment
+myvenv\Scripts\activate
+
+To install dependencies
+pip install -r requirements.txt
+
+
+Create a fastapi app to create a backend of expense-tracker application to perform CRUD operations in database. Use sqlite as a database. The model for the app contains fields - description, amount, dateoftransaction, transactiontype. Keep the application minimal. Use the current folder to app. Add CORS to enable all origins and methods.
+
+
+Now, update the backend api, so that it stores the data of multiple user who logged in seperately user-wise and make sure
+it don't overwrite the other logged-in user data and also maintain the data.
+
+Integrate the backend api in this app which is running on http://localhost:8000/transactions. Use fetch api for making an http call to the api.
+The model for the api is as below:
+```
+{
+  "description": "string",
+  "amount": 0,
+  "dateoftransaction": "2026-11-02",
+  "transactiontype": "income"
+}
+```

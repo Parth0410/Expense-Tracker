@@ -1,4 +1,5 @@
 const STORAGE_KEY = "expenseTrackerTransactions";
+const API_URL = "http://localhost:8000/transactions";
 const THEME_KEY = "expenseTrackerTheme";
 const CURRENCY_KEY = "expenseTrackerCurrency";
 
@@ -37,6 +38,31 @@ function loadTransactions() {
 function saveTransactions() {
     const storageKey = accountStorageKey();
     if (storageKey) localStorage.setItem(storageKey, JSON.stringify(transactions));
+}
+
+function transactionFromApi(transaction) {
+    return {
+        id: transaction.id,
+        description: transaction.description,
+        amount: transaction.amount,
+        date: transaction.dateoftransaction,
+        type: transaction.transactiontype
+    };
+}
+
+async function loadTransactionsFromApi() {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(`${API_URL}?username=${encodeURIComponent(currentUser.name)}`);
+        if (!response.ok) throw new Error("Unable to load transactions");
+        transactions = (await response.json()).map(transactionFromApi);
+        saveTransactions();
+        render();
+    } catch (error) {
+        console.error(error);
+        transactions = loadTransactions();
+        render();
+    }
 }
 
 function migrateLegacyTransactions() {
@@ -137,36 +163,54 @@ function render() {
     renderTransactions();
 }
 
-form.addEventListener("submit", event => {
+form.addEventListener("submit", async event => {
     event.preventDefault();
+    if (!currentUser) return;
     const data = new FormData(form);
     const amount = Number(data.get("amount"));
     const description = data.get("description").trim();
 
     if (!description || !Number.isFinite(amount) || amount <= 0) return;
 
-    transactions.push({
-        id: Date.now(),
-        description,
-        amount,
-        date: data.get("transactionDate"),
-        type: data.get("transactionType")
-    });
-
-    saveTransactions();
-    selectedMonth = data.get("transactionDate").slice(0, 7);
-    monthFilter.value = selectedMonth;
-    form.reset();
-    dateInput.valueAsDate = new Date();
-    render();
+    try {
+        const response = await fetch(`${API_URL}?username=${encodeURIComponent(currentUser.name)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                description,
+                amount,
+                dateoftransaction: data.get("transactionDate"),
+                transactiontype: data.get("transactionType")
+            })
+        });
+        if (!response.ok) throw new Error("Unable to save transaction");
+        transactions.push(transactionFromApi(await response.json()));
+        saveTransactions();
+        selectedMonth = data.get("transactionDate").slice(0, 7);
+        monthFilter.value = selectedMonth;
+        form.reset();
+        dateInput.valueAsDate = new Date();
+        render();
+    } catch (error) {
+        console.error(error);
+    }
 });
 
-transactionList.addEventListener("click", event => {
+transactionList.addEventListener("click", async event => {
     const button = event.target.closest(".delete-button");
-    if (!button) return;
-    transactions = transactions.filter(transaction => transaction.id !== Number(button.dataset.id));
-    saveTransactions();
-    render();
+    if (!button || !currentUser) return;
+    try {
+        const response = await fetch(
+            `${API_URL}/${Number(button.dataset.id)}?username=${encodeURIComponent(currentUser.name)}`,
+            { method: "DELETE" }
+        );
+        if (!response.ok && response.status !== 404) throw new Error("Unable to delete transaction");
+        transactions = transactions.filter(transaction => transaction.id !== Number(button.dataset.id));
+        saveTransactions();
+        render();
+    } catch (error) {
+        console.error(error);
+    }
 });
 
 function applyTheme(theme) {
@@ -304,19 +348,27 @@ signInForm.addEventListener("submit", event => {
 
     currentUser = { name: user.name, password: user.password, mobile: user.mobile };
     migrateLegacyTransactions();
-    transactions = loadTransactions();
     localStorage.setItem(SESSION_KEY, JSON.stringify({ name: user.name, password: user.password, mobile: user.mobile }));
+    transactions = loadTransactions();
     showDashboard();
-    render();
+    loadTransactionsFromApi();
 });
 
-document.querySelector("#clearAllButton").addEventListener("click", () => {
-    if (!transactions.length) return;
+document.querySelector("#clearAllButton").addEventListener("click", async () => {
+    if (!transactions.length || !currentUser) return;
     if (!window.confirm("Clear all transactions for this account?")) return;
 
-    transactions = [];
-    saveTransactions();
-    render();
+    try {
+        await Promise.all(transactions.map(transaction => fetch(
+            `${API_URL}/${transaction.id}?username=${encodeURIComponent(currentUser.name)}`,
+            { method: "DELETE" }
+        )));
+        transactions = [];
+        saveTransactions();
+        render();
+    } catch (error) {
+        console.error(error);
+    }
 });
 
 document.querySelector("#logoutButton").addEventListener("click", () => {
@@ -350,6 +402,7 @@ function initializeAuthentication() {
             migrateLegacyTransactions();
             transactions = loadTransactions();
             showDashboard();
+            loadTransactionsFromApi();
             return;
         }
     } catch {
